@@ -1,0 +1,269 @@
+<!doctype html>
+<!-- OD databricks-deck · baked example (SEGA Game Telemetry: Kinesis → Zerobus). Self-contained; mirrors assets/template.html. -->
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>SEGA Game Telemetry: Kinesis to Zerobus · Databricks</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,700;1,9..40,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --navy:#1B3139; --navy-deep:#0E2229; --navy-tint:#26424C;
+      --lava:#FF3621; --lava-soft:color-mix(in oklch, var(--lava) 14%, transparent);
+      --paper:#F9F7F4; --surface:#FFFFFF; --ink:#1B3139; --muted:#5A6872; --border:#E4E1DB;
+      --green:#00A972; --amber:#FFAB00; --code-bg:#0B1A21; --code-fg:#E8EDEF;
+      --font-display:'DM Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;
+      --font-body:'DM Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;
+      --font-mono:'DM Mono',ui-monospace,'SF Mono',Menlo,monospace;
+    }
+    *,*::before,*::after{box-sizing:border-box;}
+    html,body{margin:0;height:100%;}
+    body{background:var(--paper);color:var(--ink);font-family:var(--font-body);font-size:18px;line-height:1.5;-webkit-font-smoothing:antialiased;display:flex;overflow-x:auto;overflow-y:hidden;scroll-snap-type:x mandatory;scroll-behavior:smooth;}
+    body::-webkit-scrollbar{display:none;}
+    p{text-wrap:pretty;} h1,h2,h3{text-wrap:balance;}
+    .slide{flex:0 0 100vw;width:100vw;height:100vh;scroll-snap-align:start;padding:clamp(44px,5.5vw,92px) clamp(52px,7vw,120px);display:flex;flex-direction:column;justify-content:center;position:relative;overflow:hidden;}
+    .slide.light{background:var(--paper);color:var(--ink);}
+    .slide.dark{background:var(--navy);color:#fff;}
+    .slide.dark .muted{color:rgba(255,255,255,.7);}
+    .slide.center{align-items:center;text-align:center;justify-content:center;}
+    .db-logo{display:inline-flex;align-items:center;gap:14px;}
+    .db-logo .mark{width:34px;height:34px;display:block;}
+    .db-logo .word{font-family:var(--font-display);font-weight:700;font-size:30px;letter-spacing:-0.02em;}
+    .slide.dark .db-logo .word{color:#fff;} .slide.light .db-logo .word{color:var(--ink);}
+    .db-logo.corner{position:absolute;top:clamp(36px,4vw,60px);left:clamp(52px,7vw,120px);}
+    .db-foot{position:absolute;left:clamp(52px,7vw,120px);bottom:clamp(32px,4vw,52px);width:26px;height:26px;opacity:.9;}
+    .eyebrow{font-family:var(--font-mono);font-size:13px;letter-spacing:.1em;text-transform:uppercase;color:var(--lava);margin:0 0 24px;}
+    .h-hero{font-family:var(--font-display);font-weight:700;font-size:clamp(52px,6.5vw,96px);line-height:1.04;letter-spacing:-0.025em;margin:0 0 20px;max-width:18ch;}
+    .h-xl{font-family:var(--font-display);font-weight:700;font-size:clamp(40px,4.4vw,68px);line-height:1.08;letter-spacing:-0.02em;margin:0 0 10px;max-width:22ch;}
+    .h-md{font-family:var(--font-display);font-weight:700;font-size:clamp(28px,3vw,40px);line-height:1.15;letter-spacing:-0.015em;margin:0 0 16px;}
+    .subhead{font-family:var(--font-display);font-weight:500;font-size:clamp(20px,2vw,30px);line-height:1.25;color:var(--lava);margin:0 0 36px;max-width:34ch;}
+    .lead{font-size:clamp(19px,1.5vw,23px);line-height:1.55;color:var(--muted);max-width:56ch;margin:0;}
+    .slide.dark .lead{color:rgba(255,255,255,.78);}
+    .accent-rule{width:56px;height:4px;background:var(--lava);border:0;margin:28px 0 0;}
+    .title-shapes{position:absolute;right:clamp(60px,9vw,150px);bottom:clamp(90px,12vh,150px);width:clamp(220px,24vw,340px);height:clamp(150px,17vw,240px);}
+    .title-shapes .sq,.title-shapes .ci,.title-shapes .tr{position:absolute;background:var(--lava);}
+    .title-shapes .sq{right:0;bottom:0;width:44%;height:56%;}
+    .title-shapes .ci{left:0;bottom:0;width:44%;aspect-ratio:1;border-radius:50%;}
+    .title-shapes .tr{right:0;top:0;width:44%;aspect-ratio:1/0.92;clip-path:polygon(50% 0,100% 100%,0 100%);}
+    .divider-shapes{position:absolute;inset:0;overflow:hidden;pointer-events:none;}
+    .divider-shapes .semi{position:absolute;right:-6vw;width:34vw;aspect-ratio:1;border-radius:50%;background:var(--navy-tint);opacity:.5;}
+    .divider-shapes .semi.a{top:-12vw;} .divider-shapes .semi.b{bottom:-14vw;}
+    .divider-shapes .tri{position:absolute;right:8vw;bottom:-2vw;width:20vw;aspect-ratio:1;background:var(--navy-deep);clip-path:polygon(50% 0,100% 100%,0 100%);}
+    .split{display:grid;grid-template-columns:minmax(240px,0.9fr) 1.6fr;gap:clamp(40px,5vw,88px);align-items:center;height:100%;}
+    .aside-icon{width:clamp(90px,10vw,140px);height:clamp(90px,10vw,140px);color:var(--lava);margin:0 0 28px;} .aside-icon svg{width:100%;height:100%;}
+    .card-stack{display:grid;gap:18px;}
+    .card{position:relative;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:24px 28px 24px 150px;min-height:112px;display:flex;flex-direction:column;justify-content:center;}
+    .card .card-tab{position:absolute;left:20px;top:-14px;background:var(--lava);color:#fff;font-family:var(--font-mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;padding:6px 14px;border-radius:8px;}
+    .card .card-icon{position:absolute;left:32px;top:50%;transform:translateY(-50%);width:76px;height:76px;color:var(--navy);opacity:.85;} .card .card-icon svg{width:100%;height:100%;}
+    .card .card-title{font-family:var(--font-display);font-weight:700;font-size:clamp(22px,2vw,30px);color:var(--muted);margin:0;}
+    .card .card-desc{color:var(--muted);font-size:16px;margin:6px 0 0;}
+    .card.is-highlight{background:var(--navy);border-color:var(--navy);}
+    .card.is-highlight .card-title{color:#fff;} .card.is-highlight .card-desc{color:var(--lava);font-weight:500;} .card.is-highlight .card-icon{color:#fff;opacity:1;}
+    .feature{display:grid;grid-template-columns:1fr 1.05fr;gap:clamp(36px,4vw,72px);align-items:center;height:100%;}
+    .feature .body p{margin:0 0 20px;font-size:clamp(16px,1.3vw,20px);line-height:1.5;}
+    .feature .body u{text-decoration-color:var(--lava);text-underline-offset:3px;}
+    .panel{background:var(--navy);border-radius:16px;padding:clamp(28px,3vw,48px);color:#fff;height:100%;display:flex;flex-direction:column;justify-content:center;}
+    .panel .panel-title{font-family:var(--font-display);font-weight:700;color:var(--lava);font-size:clamp(22px,2vw,30px);margin:0 0 24px;text-align:center;}
+    .pills{display:flex;gap:16px;margin-top:28px;}
+    .pill{font-family:var(--font-display);font-weight:700;border-radius:999px;padding:14px 28px;font-size:clamp(15px,1.2vw,18px);}
+    .pill.ga{background:var(--green);color:#fff;} .pill.cta{background:var(--lava);color:#fff;}
+    .icon-row{display:grid;grid-template-columns:repeat(3,1fr);gap:clamp(28px,4vw,64px);margin:8px 0 40px;}
+    .icon-col{display:flex;flex-direction:column;align-items:center;text-align:center;gap:20px;}
+    .icon-col .ic{width:72px;height:72px;color:var(--lava);} .icon-col .ic svg{width:100%;height:100%;}
+    .pill-label{background:color-mix(in oklch,var(--ink) 6%,transparent);border-radius:12px;padding:16px 20px;font-weight:700;color:var(--ink);font-size:clamp(15px,1.2vw,18px);width:100%;}
+    .lanes{display:grid;grid-template-columns:repeat(3,1fr);gap:0;margin:24px 0 36px;}
+    .lane-head{justify-self:start;font-family:var(--font-display);font-weight:700;color:var(--ink);font-size:clamp(15px,1.2vw,18px);padding:10px 26px;border-radius:4px;}
+    .lane-head.green{background:var(--green);color:#fff;} .lane-head.amber{background:var(--amber);color:var(--navy);} .lane-head.lava{background:var(--lava);color:#fff;}
+    .arch{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+    .node{background:#ECEAE4;border:1.5px solid var(--border);border-radius:6px;padding:18px 22px;font-size:clamp(13px,1vw,16px);line-height:1.25;text-align:center;min-width:120px;}
+    .node.edge-green{border-color:var(--green);background:#fff;} .node.edge-lava{border-color:var(--lava);background:#fff;}
+    .node.band{background:#fff;border:1.5px solid var(--border);color:var(--ink);font-weight:500;} .node.tag-lava{background:var(--lava);color:#fff;border-color:var(--lava);font-weight:700;}
+    .arrow{color:var(--lava);font-size:24px;line-height:1;flex:0 0 auto;}
+    .arrow .edge-note{display:block;font-family:var(--font-mono);font-size:11px;color:var(--muted);margin-top:2px;}
+    .bullets{list-style:none;margin:0;padding:0;display:grid;gap:18px;max-width:60ch;}
+    .bullets>li{position:relative;padding-left:34px;font-size:clamp(18px,1.5vw,24px);line-height:1.4;}
+    .bullets>li::before{content:"";position:absolute;left:0;top:.5em;width:12px;height:12px;border-radius:50%;background:var(--green);}
+    .bullets .sub{list-style:none;margin:10px 0 0;padding:0;display:grid;gap:8px;}
+    .bullets .sub>li{position:relative;padding-left:24px;font-size:clamp(15px,1.2vw,19px);color:var(--muted);}
+    .bullets .sub>li::before{content:"";position:absolute;left:0;top:.55em;width:8px;height:8px;border-radius:50%;border:2px solid var(--amber);}
+    .timeline{margin:40px 0 0;font-size:clamp(17px,1.4vw,22px);} .timeline b{color:var(--lava);font-weight:700;}
+    .dash-list{list-style:none;margin:8px 0 0;padding:0;display:grid;gap:14px;}
+    .dash-list>li{position:relative;padding-left:36px;font-size:clamp(20px,1.7vw,28px);}
+    .dash-list>li::before{content:"–";position:absolute;left:0;color:var(--muted);}
+    .cmp-table{width:100%;border-collapse:collapse;margin-top:20px;font-size:clamp(14px,1.1vw,18px);}
+    .cmp-table th,.cmp-table td{text-align:left;padding:18px 22px;border:1px solid var(--border);vertical-align:top;line-height:1.4;}
+    .cmp-table thead th{background:var(--navy);color:#fff;font-family:var(--font-display);font-weight:700;border-color:var(--navy);}
+    .cmp-table tbody th{font-weight:700;width:18%;}
+    .cmp-table .hl{background:color-mix(in oklch,var(--green) 20%,transparent);font-family:var(--font-mono);font-weight:500;}
+    .code{background:var(--code-bg);color:var(--code-fg);border-radius:12px;padding:clamp(22px,2.4vw,40px);overflow:auto;margin-top:8px;}
+    .code pre{margin:0;font-family:var(--font-mono);font-size:clamp(13px,1.1vw,18px);line-height:1.6;white-space:pre;}
+    .code .cm{color:#7FA7B3;} .code .kw{color:#FF6A5A;} .code .st{color:#8FD3A6;} .code .fn{color:#FFC24B;}
+    .deck-counter{position:fixed;bottom:22px;right:30px;font-family:var(--font-mono);font-size:12px;color:var(--ink);background:var(--surface);padding:6px 12px;border-radius:999px;border:1px solid var(--border);letter-spacing:.04em;z-index:10;}
+    .deck-hint{position:fixed;bottom:22px;left:30px;font-family:var(--font-mono);font-size:11px;color:var(--muted);letter-spacing:.04em;z-index:10;}
+    .deck-progress{position:fixed;top:0;left:0;height:3px;background:var(--lava);width:0;z-index:10;transition:width .18s ease;}
+    .deck-dots{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);display:flex;gap:8px;z-index:10;}
+    .deck-dots .dot{width:8px;height:8px;border-radius:50%;border:0;padding:0;background:color-mix(in oklch,var(--ink) 25%,transparent);cursor:pointer;}
+    .deck-dots .dot[aria-current="true"]{background:var(--lava);}
+    @media print{body{display:block;overflow:visible;} .slide{page-break-after:always;height:100vh;} .deck-counter,.deck-hint,.deck-progress,.deck-dots{display:none;}}
+  </style>
+</head>
+<body>
+  <section class="slide dark" data-screen-label="01 Title">
+    <div class="db-logo corner"><svg class="mark" viewBox="0 0 32 32" aria-hidden="true"><path d="M16 3 3 10l13 7 13-7-13-7Z" stroke="#FF3621" stroke-width="1.4" fill="none"/></svg><span class="word">databricks</span></div>
+    <h1 class="h-hero">SEGA Game Telemetry:<br/>Kinesis to Zerobus</h1>
+    <hr class="accent-rule" />
+    <div class="title-shapes"><span class="tr"></span><span class="ci"></span><span class="sq"></span></div>
+  </section>
+
+  <section class="slide light" data-screen-label="02 Lakeflow">
+    <div class="split">
+      <div>
+        <div class="aside-icon"><svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2"><path d="M24 6l16 9v18l-16 9-16-9V15z"/></svg></div>
+        <h2 class="h-md">Lakeflow</h2>
+        <p class="subhead">Unified, intelligent solution for data engineering</p>
+      </div>
+      <div class="card-stack">
+        <div class="card is-highlight"><span class="card-tab">Ingest</span><span class="card-icon"><svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2"><circle cx="24" cy="24" r="16"/></svg></span><h3 class="card-title">Connect</h3><p class="card-desc">Efficient data ingestion into your lakehouse</p></div>
+        <div class="card"><span class="card-tab">Transform</span><span class="card-icon"><svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 24h32M24 8v32"/></svg></span><h3 class="card-title">Declarative Pipelines</h3><p class="card-desc">Reliable data pipelines made easy</p></div>
+        <div class="card"><span class="card-tab">Orchestrate</span><span class="card-icon"><svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2"><rect x="10" y="10" width="28" height="28" rx="4"/></svg></span><h3 class="card-title">Jobs</h3><p class="card-desc">Orchestrate workflows across the Data Intelligence Platform</p></div>
+      </div>
+    </div>
+    <div class="db-foot"><svg viewBox="0 0 32 32" aria-hidden="true"><path d="M16 3 3 10l13 7 13-7-13-7Z" stroke="#FF3621" stroke-width="1.4" fill="none"/></svg></div>
+  </section>
+
+  <section class="slide light" data-screen-label="03 Zerobus">
+    <h2 class="h-xl">Zerobus Ingest</h2>
+    <p class="subhead">Simplify ingestion for IoT, clickstream, telemetry, and more</p>
+    <div class="feature">
+      <div class="body">
+        <p><strong>Push event data directly to your Lakehouse, eliminating data hops.</strong></p>
+        <p><u>Performance at scale</u> — near real-time writes (&lt; 5 sec), up to 100 MB/sec per connection, built for highly concurrent workloads.</p>
+        <div class="pills"><span class="pill ga">GA</span><span class="pill cta">Create a table → push data</span></div>
+      </div>
+      <div class="panel"><p class="panel-title">Zerobus Ingest</p><p class="lead" style="color:rgba(255,255,255,.8)">Producers (cloud apps, edge, IoT) → Zerobus → Unity Catalog. High throughput · near real-time · low TCO.</p></div>
+    </div>
+  </section>
+
+  <section class="slide dark" data-screen-label="04 Current state">
+    <h2 class="h-hero">Current state</h2>
+    <div class="divider-shapes"><span class="semi a"></span><span class="semi b"></span><span class="tri"></span></div>
+  </section>
+
+  <section class="slide light" data-screen-label="05 Multi-hop">
+    <h2 class="h-xl">Multi-Hop Ingestion via Kinesis</h2>
+    <div class="icon-row">
+      <div class="icon-col"><span class="ic"><svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2"><path d="M24 6v28M14 20l10-10 10 10"/></svg></span><span class="pill-label">Unnecessary architectural complexity</span></div>
+      <div class="icon-col"><span class="ic"><svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2"><path d="M24 6l16 6v10c0 10-7 16-16 20-9-4-16-10-16-20V12z"/></svg></span><span class="pill-label">AWS lock-in via Kinesis</span></div>
+      <div class="icon-col"><span class="ic"><svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 38L30 18m-6-6l10 10"/></svg></span><span class="pill-label">Additional infrastructure to maintain and monitor</span></div>
+    </div>
+    <ul class="bullets"><li>Game clients send telemetry via Prism SDK to API Gateway</li><li>API Gateway forwards to Amazon Kinesis</li><li>Kinesis streams into the Bronze table; Silver/Gold process downstream</li></ul>
+    <div class="db-foot"><svg viewBox="0 0 32 32" aria-hidden="true"><path d="M16 3 3 10l13 7 13-7-13-7Z" stroke="#FF3621" stroke-width="1.4" fill="none"/></svg></div>
+  </section>
+
+  <section class="slide light" data-screen-label="06 Current architecture">
+    <h2 class="h-xl">Current state</h2>
+    <div class="lanes"><span class="lane-head green">SEGA</span><span class="lane-head amber">AWS</span><span class="lane-head lava">Databricks</span></div>
+    <div class="arch">
+      <span class="node edge-green">Game<br/>Clients</span><span class="arrow">→</span>
+      <span class="node edge-green">Prism SDK<br/>telemetry</span><span class="arrow">→</span>
+      <span class="node">API Gateway</span><span class="arrow">→</span>
+      <span class="node">Amazon<br/>Kinesis</span><span class="arrow">→</span>
+      <span class="node edge-lava">Bronze</span><span class="node band">Silver</span><span class="node band">Gold</span>
+    </div>
+    <div class="db-foot"><svg viewBox="0 0 32 32" aria-hidden="true"><path d="M16 3 3 10l13 7 13-7-13-7Z" stroke="#FF3621" stroke-width="1.4" fill="none"/></svg></div>
+  </section>
+
+  <section class="slide dark" data-screen-label="07 Phase 1">
+    <h2 class="h-hero">Phase 1</h2>
+    <div class="divider-shapes"><span class="semi a"></span><span class="semi b"></span><span class="tri"></span></div>
+  </section>
+
+  <section class="slide light" data-screen-label="08 API Gateway to Zerobus">
+    <h2 class="h-xl">API Gateway Writes to Zerobus</h2>
+    <p class="subhead">Drop Kinesis, zero game-developer impact</p>
+    <ul class="bullets">
+      <li>Update API Gateway backend from Kinesis to the Zerobus REST endpoint</li>
+      <li>Game clients and Prism SDK remain completely unchanged
+        <ul class="sub"><li>Immediate elimination of Kinesis ($6K/month savings)</li></ul>
+      </li>
+      <li>Reduced architecture: one fewer AWS component to manage</li>
+    </ul>
+    <p class="timeline"><b>Timeline:</b> Fastest path to value — backend config change only</p>
+    <div class="db-foot"><svg viewBox="0 0 32 32" aria-hidden="true"><path d="M16 3 3 10l13 7 13-7-13-7Z" stroke="#FF3621" stroke-width="1.4" fill="none"/></svg></div>
+  </section>
+
+  <section class="slide light" data-screen-label="09 Qualification">
+    <h2 class="h-xl">Qualification</h2>
+    <table class="cmp-table">
+      <thead><tr><th>Area</th><th>Current State</th><th>Future State</th></tr></thead>
+      <tbody>
+        <tr><th>Throughput</th><td>~30K events/sec, JSON payloads (KB to 100s KB)</td><td>Near real-time writes (&lt; 5 sec), up to 100 MB/sec per connection, built for concurrency</td></tr>
+        <tr><th>Cost</th><td>Kinesis: ~$6K/month</td><td>Zerobus $0.050/GB &nbsp; <span class="hl">Promo: 50% off until Sep 1, 2026</span></td></tr>
+        <tr><th>Guarantees</th><td>At-least-once is sufficient</td><td>Confirmed viable</td></tr>
+      </tbody>
+    </table>
+    <div class="db-foot"><svg viewBox="0 0 32 32" aria-hidden="true"><path d="M16 3 3 10l13 7 13-7-13-7Z" stroke="#FF3621" stroke-width="1.4" fill="none"/></svg></div>
+  </section>
+
+  <section class="slide light" data-screen-label="10 Step 1">
+    <h2 class="h-xl">Step 1: Create Table</h2>
+    <p class="subhead">Create a managed Delta table in Unity Catalog</p>
+    <div class="code"><pre><span class="cm">%sql</span>
+<span class="kw">CREATE TABLE</span> catalog.row_ingest_managed.events (
+  id <span class="kw">INT</span>, payload <span class="kw">STRING</span>, name <span class="kw">STRING</span>
+);</pre></div>
+    <div class="db-foot"><svg viewBox="0 0 32 32" aria-hidden="true"><path d="M16 3 3 10l13 7 13-7-13-7Z" stroke="#FF3621" stroke-width="1.4" fill="none"/></svg></div>
+  </section>
+
+  <section class="slide light" data-screen-label="11 Next steps">
+    <h2 class="h-xl">Next steps</h2>
+    <ul class="dash-list"><li>Discussion with Databricks team</li><li>Agree on the phase</li><li>Kick off evaluation</li><li>Share results</li><li>Approval and production deployment</li></ul>
+    <div class="db-foot"><svg viewBox="0 0 32 32" aria-hidden="true"><path d="M16 3 3 10l13 7 13-7-13-7Z" stroke="#FF3621" stroke-width="1.4" fill="none"/></svg></div>
+  </section>
+
+  <section class="slide dark center" data-screen-label="12 Logo">
+    <div class="db-logo"><svg class="mark" viewBox="0 0 32 32" aria-hidden="true"><path d="M16 3 3 10l13 7 13-7-13-7Z" stroke="#FF3621" stroke-width="1.4" fill="none"/></svg><span class="word">databricks</span></div>
+  </section>
+
+  <div class="deck-progress" id="deck-progress" aria-hidden="true"></div>
+  <div class="deck-dots" id="deck-dots" role="tablist" aria-label="Slides"></div>
+  <div class="deck-counter" id="deck-counter">1 / 12</div>
+  <div class="deck-hint">← / → · scroll · swipe</div>
+
+  <script>
+    (function () {
+      var slides = Array.prototype.slice.call(document.querySelectorAll('.slide'));
+      var counter = document.getElementById('deck-counter');
+      var progress = document.getElementById('deck-progress');
+      var dotsWrap = document.getElementById('deck-dots');
+      var KEY = 'od-deck-pos', active = 0, dots = [];
+      slides.forEach(function (_, i) {
+        var b = document.createElement('button');
+        b.className = 'dot'; b.setAttribute('role', 'tab'); b.setAttribute('aria-label', 'Slide ' + (i + 1));
+        b.addEventListener('click', function () { go(i); });
+        dotsWrap.appendChild(b); dots.push(b);
+      });
+      function scrollContainers(){return [document.scrollingElement,document.documentElement,document.body].filter(Boolean).filter(function(el,idx,arr){return arr.indexOf(el)===idx;});}
+      function overflowX(el){return el?Math.max(0,(el.scrollWidth||0)-(el.clientWidth||0)):0;}
+      function scrollLeftOf(el){if(!el)return 0;try{return Number(el.scrollLeft)||0;}catch(_){return 0;}}
+      function activeScrollLeft(){var c=scrollContainers(),best=0;for(var i=0;i<c.length;i++){var l=scrollLeftOf(c[i]);if(Math.abs(l)>Math.abs(best))best=l;}return best;}
+      function scrollToLeft(left,behavior){var c=scrollContainers();for(var i=0;i<c.length;i++){try{c[i].scrollLeft=left;}catch(_){}try{c[i].scrollTo({left:left,behavior:behavior||'smooth'});}catch(_){}}}
+      function setActive(i){active=i;for(var k=0;k<slides.length;k++){var on=k===i;slides[k].classList.toggle('active',on);slides[k].classList.toggle('is-active',on);if(dots[k])dots[k].setAttribute('aria-current',on?'true':'false');}if(counter)counter.textContent=(i+1)+' / '+slides.length;if(progress)progress.style.width=(((i+1)/slides.length)*100)+'%';try{localStorage.setItem(KEY,String(i));}catch(_){}}
+      function go(i){var next=Math.max(0,Math.min(slides.length-1,i));setActive(next);scrollToLeft(next*window.innerWidth,'smooth');}
+      function syncFromScroll(){var i=Math.round(activeScrollLeft()/window.innerWidth);if(i!==active&&i>=0&&i<slides.length)setActive(i);}
+      function onKey(e){if(e.defaultPrevented)return;var t=e.target;if(t&&(t.tagName==='INPUT'||t.tagName==='TEXTAREA'||t.isContentEditable))return;if(e.key==='ArrowRight'||e.key==='ArrowDown'||e.key===' '||e.key==='PageDown'){e.preventDefault();go(active+1);}else if(e.key==='ArrowLeft'||e.key==='ArrowUp'||e.key==='PageUp'){e.preventDefault();go(active-1);}else if(e.key==='Home'){e.preventDefault();go(0);}else if(e.key==='End'){e.preventDefault();go(slides.length-1);}}
+      window.addEventListener('keydown',onKey,true);
+      document.addEventListener('keydown',onKey,true);
+      document.addEventListener('scroll',syncFromScroll,{passive:true,capture:true});
+      window.addEventListener('scroll',syncFromScroll,{passive:true});
+      window.addEventListener('resize',function(){scrollToLeft(active*window.innerWidth,'instant');});
+      document.body.setAttribute('tabindex','-1');document.body.style.outline='none';
+      function focusDeck(){try{window.focus();document.body.focus({preventScroll:true});}catch(_){}}
+      document.addEventListener('mousedown',focusDeck);window.addEventListener('load',focusDeck);focusDeck();
+      try{var saved=parseInt(localStorage.getItem(KEY)||'0',10);if(!isNaN(saved)&&saved>=0&&saved<slides.length){setActive(saved);scrollToLeft(saved*window.innerWidth,'instant');}else{setActive(0);}}catch(_){setActive(0);}
+    })();
+  </script>
+</body>
+</html>
